@@ -226,55 +226,72 @@ async function performSearch() {
     }
 }
 // ==========================================
-// تشغيل كاميرا الـ QR Code من الداشبورد (نسخة مطورة)
+// تشغيل كاميرا الـ QR Code من الداشبورد (نسخة جيت هاب والموبايل المضمونة)
 // ==========================================
 const scanQRBtn = document.getElementById("scanQRBtn");
-let html5QrcodeScanner = null;
+let html5QrCode = null; // استخدام الكائن الاحترافي المباشر
 
 if (scanQRBtn) {
-    scanQRBtn.addEventListener("click", () => {
+    scanQRBtn.addEventListener("click", async () => {
         const readerElement = document.getElementById("qr-reader");
         
-        // لو الكاميرا مفتوحة ومفتوحة تاني وضغطنا ع الزرار يقفلها (Toggle)
+        // 1. لو الكاميرا شباكة بالفعل وضغطنا تاني، نقفلها ونعمل سد (Toggle)
         if (readerElement.style.display === "block") {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear();
+            if (html5QrCode && html5QrCode.isScanning) {
+                try {
+                    await html5QrCode.stop();
+                } catch(e) { console.log(e); }
             }
             readerElement.style.display = "none";
+            readerElement.innerHTML = ""; // تصفير المحتوى
             return;
         }
 
-        // إظهار مربع الكاميرا
+        // 2. إظهار مربع الكاميرا وتجهيزه
         readerElement.style.display = "block";
+        readerElement.innerHTML = `<div id="camera-preview" style="width: 100%; height: 280px;"></div>`;
         
-        // إعدادات الكاميرا (طلب الكاميرا الخلفية للموبايل وتحديد حجم المربع)
-        html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { 
-            fps: 15, 
-            qrbox: { width: 250, height: 250 },
-            rememberLastUsedCamera: true
-        });
-        
-        // تشغيل الاسكانر
-        html5QrcodeScanner.render((decodedText) => {
-            // أول ما يلقط الـ QR بنجاح:
-            console.log("تم قراءة الـ QR بنجاح:", decodedText);
+        // 3. تشغيل الكاميرا بإجبار الموبايل على استخدام الكاميرا الخلفية
+        try {
+            html5QrCode = new Html5Qrcode("camera-preview");
             
-            // 1. إيقاف الكاميرا فوراً وإخفاء المربع
-            html5QrcodeScanner.clear();
-            readerElement.style.display = "none";
-            
-            // 2. تحليل الرابط الملقوط
-            // لو الرابط اللي جوه الـ QR كامل (مثلا: patient.html?id=123) هيحول عليه علطول
-            if (decodedText.includes("patient.html") || decodedText.includes("?id=")) {
-                window.location.href = decodedText;
-            } else {
-                // لو الـ QR جواه الـ ID بس كـ نص (مثلاً: 222102301) هنحوله إحنا لصفحة المريض
-                window.location.href = `patient.html?id=${decodedText.trim()}`;
-            }
-            
-        }, (errorMessage) => {
-            // ده خطأ بيظهر لو الكاميرا شغالة ولسه ملقطتش حاجة (نصيبه عشان ميعملش زحمة في الـ Console)
-        });
+            const config = { 
+                fps: 15, 
+                qrbox: { width: 220, height: 220 } 
+            };
+
+            // الـ environment بتجبر الموبايل يفتح الكاميرا اللي ورا علطول
+            await html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                (decodedText) => {
+                    // أول ما يلقط الـ QR بنجاح
+                    html5QrCode.stop().then(() => {
+                        readerElement.style.display = "none";
+                        readerElement.innerHTML = "";
+                        
+                        // التحويل لصفحة المريض
+                        if (decodedText.includes("patient.html") || decodedText.includes("?id=")) {
+                            window.location.href = decodedText;
+                        } else {
+                            window.location.href = `patient.html?id=${decodedText.trim()}`;
+                        }
+                    }).catch(err => console.error(err));
+                },
+                (errorMessage) => {
+                    // تتبع صامت أثناء عدم اللقط
+                }
+            );
+
+        } catch (error) {
+            console.error("خطأ في تشغيل الكاميرا:", error);
+            readerElement.innerHTML = `
+                <div style="padding: 15px; text-align: center; color: red; font-size: 14px;">
+                    <i class="fa-solid fa-circle-exclamation"></i> فشل فتح الكاميرا.<br>
+                    تأكد من إعطاء صلاحية الكاميرا للمتصفح في الموبايل.
+                </div>
+            `;
+        }
     });
 }
 if (searchBtn) searchBtn.addEventListener("click", performSearch);
