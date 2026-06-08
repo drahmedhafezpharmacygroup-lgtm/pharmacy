@@ -1,6 +1,6 @@
-// استدعاء الفايربيز بشكل مباشر مضافاً إليه دالات الحذف (deleteDoc)
+// استدعاء الفايربيز بشكل مباشر مضافاً إليه دالة التحديث updateDoc
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 // إعدادات الـ Firebase الخاصة بمشروعك
 const firebaseConfig = {
@@ -28,7 +28,16 @@ const viewDiagnosis = document.getElementById("view-diagnosis");
 const viewTotalPoints = document.getElementById("view-total-points");
 const visitsTimeline = document.getElementById("visitsTimeline");
 const visitForm = document.getElementById("visitForm");
-const deletePatientBtn = document.getElementById("deletePatientBtn"); // زرار الحذف الجديد
+const deletePatientBtn = document.getElementById("deletePatientBtn");
+
+// دالة مساعدة للحصول على تاريخ اليوم بصيغة YYYY-MM-DD
+function getTodayDateString() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
 function calculateAge(birthDate) {
     if(!birthDate) return "-";
@@ -70,7 +79,7 @@ async function loadPatientData() {
     }
 }
 
-// 2. جلب سجل الزيارات وحساب إجمالي النقاط تلقائياً
+// 2. جلب سجل الزيارات وحساب إجمالي النقاط وتفعيل أزرار الـ Done الداخلية
 async function loadVisitsHistory() {
     try {
         const q = query(collection(db, "appointments"), where("patientId", "==", patientCustomId));
@@ -84,17 +93,42 @@ async function loadVisitsHistory() {
                 let visitsHtml = "";
                 querySnapshot.forEach((docSnap) => {
                     const visit = docSnap.data();
+                    const visitDocId = docSnap.id; // آي دي المستند عشان زرار Done
+
                     if (visit.points) { totalPoints += parseInt(visit.points); }
+                    
+                    // تحديد شارة الحالة (هل الموعد انتهى أم لا زال معلقاً)
+                    const isAttended = visit.status === "attended";
+                    const statusBadge = isAttended 
+                        ? `<span style="background:#28a745; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">تمت بالكامل</span>`
+                        : `<span style="background:#ffc107; color:#212529; padding:2px 8px; border-radius:4px; font-size:12px;">موعد معلّق</span>`;
+
                     visitsHtml += `
-                        <div class="visit-history-item" style="padding: 15px; background: #f8f9fa; border-right: 4px solid #28a745; border-radius: 6px; margin-bottom: 10px;">
-                            <h5><i class="fa-solid fa-calendar-check"></i> موعد الزيارة القادمة المحدد: ${visit.nextDate}</h5>
+                        <div class="visit-history-item" style="padding: 15px; background: #f8f9fa; border-right: 4px solid ${isAttended ? '#28a745' : '#ffc107'}; border-radius: 6px; margin-bottom: 12px; position: relative;">
+                            
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <span style="font-size:13px; color:#555;"><strong>تاريخ الكشف/الزيارة الحالية:</strong> ${visit.visitDate || 'غير مسجل'}</span>
+                                ${statusBadge}
+                            </div>
+                            
+                            <h5 style="margin: 5px 0;"><i class="fa-solid fa-calendar-check"></i> الموعد القادم المحدد: ${visit.nextDate}</h5>
                             <p style="margin: 5px 0;"><strong>العلاج والجرعات:</strong> ${visit.medication}</p>
                             <p style="margin: 5px 0;"><strong>النقاط المعطاة:</strong> <span style="color:green; font-weight:bold;">+${visit.points} نقطة</span></p>
                             ${visit.notes ? `<p style="margin: 5px 0; color:#666; font-style:italic;"><strong>ملحوظة:</strong> ${visit.notes}</p>` : ''}
+                            
+                            ${!isAttended ? `
+                                <button class="inner-done-btn" data-id="${visitDocId}" style="position: absolute; left: 15px; bottom: 15px; background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">
+                                    <i class="fa-solid fa-check"></i> تم ميعاد الزيارة
+                                </button>
+                            ` : ''}
                         </div>
                     `;
                 });
                 visitsTimeline.innerHTML = visitsHtml;
+                
+                // تشغيل الأزرار الداخلية بعد الحقن في الـ HTML
+                activateInnerDoneButtons();
+                
             } else {
                 visitsTimeline.innerHTML = `<p class="empty-text" style="color:#888; font-style:italic;">لا يوجد زيارات مسجلة مسبقاً لهذا المريض.</p>`;
             }
@@ -105,26 +139,51 @@ async function loadVisitsHistory() {
     }
 }
 
-// 3. حفظ زيارة جديدة وموعد جديد
+// دالة لتشغيل زرار "تم ميعاد الزيارة" من جوه صفحة البيشنت
+function activateInnerDoneButtons() {
+    const buttons = document.querySelectorAll(".inner-done-btn");
+    buttons.forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            const docId = e.target.getAttribute("data-id") || e.target.parentElement.getAttribute("data-id");
+            if (!docId) return;
+
+            try {
+                const docRef = doc(db, "appointments", docId);
+                await updateDoc(docRef, { status: "attended" });
+                alert("تم تحديث حالة الموعد إلى (تمت)، ولن تظهر في الأوفر ديو بالداشبورد.");
+                loadVisitsHistory(); // تحديث الصفحة فوراً
+            } catch (err) {
+                alert("حدث خطأ أثناء التحديث.");
+            }
+        });
+    });
+}
+
+// 3. حفظ زيارة جديدة (بتسجيل تاريخ اليوم تلقائياً وتحديد الموعد القادم)
 if (visitForm) {
     visitForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const nextDate = document.getElementById("nextVisitDate").value;
+
+        const nextDate = document.getElementById("nextVisitDate").value; // تاريخ المرة الجاية من الـ Input
         const medication = document.getElementById("visitMedication").value.trim();
         const points = document.getElementById("visitPoints").value;
         const notes = document.getElementById("visitNotes").value.trim();
+        
+        const todayStr = getTodayDateString(); // توليد تاريخ اليوم الحقيقي تلقائياً
 
         try {
             await addDoc(collection(db, "appointments"), {
                 patientId: patientCustomId,
-                nextDate: nextDate,
+                visitDate: todayStr,     // حفظ الإجراء بتاريخ النهاردة بالظبط
+                nextDate: nextDate,      // ميعاد الجلسة القادمة
                 medication: medication,
                 points: parseInt(points) || 0,
                 notes: notes,
-                status: "pending",
+                status: "pending",       // بيبدأ معلق عشان يظهر في جدول الداشبورد
                 createdAt: new Date().toISOString()
             });
-            alert("تم تسجيل الزيارة بنجاح!");
+
+            alert("تم تسجيل الإجراء بتاريخ اليوم بنجاح، وتحديد الموعد القادم!");
             visitForm.reset();
             loadVisitsHistory();
         } catch (error) {
@@ -133,42 +192,55 @@ if (visitForm) {
     });
 }
 
-// ==========================================
-// 4. منطق حذف المريض وسجله بالكامل نهائياً
-// ==========================================
+// 4. منطق حذف المريض
 if (deletePatientBtn) {
     deletePatientBtn.addEventListener("click", async () => {
-        // رسالة تحذيرية للتأكيد قبل الحذف الفعلي
-        const confirmDelete = confirm(`هل أنت متأكد تماماً من حذف المريض (${viewName.innerText}) نهائياً؟\nسيؤدي هذا لحذف كل سجلات زياراته وأدوية المريض الموصوفة ولا يمكن التراجع عن هذا الإجراء!`);
-        
-        if (!confirmDelete) return; // لو كنسل الإجراء نوقف هنا
+        const confirmDelete = confirm(`هل أنت متأكد تماماً من حذف المريض نهائياً؟`);
+        if (!confirmDelete) return;
 
         try {
-            // أ. حذف المريض من كولكشن patients
             const pQuery = query(collection(db, "patients"), where("customId", "==", patientCustomId));
             const pSnapshot = await getDocs(pQuery);
-            pSnapshot.forEach(async (docSnap) => {
-                await deleteDoc(doc(db, "patients", docSnap.id));
-            });
+            pSnapshot.forEach(async (docSnap) => { await deleteDoc(doc(db, "patients", docSnap.id)); });
 
-            // ب. حذف جميع الزيارات والمواعيد المرتبطة بهذا المريض من كولكشن appointments
             const appQuery = query(collection(db, "appointments"), where("patientId", "==", patientCustomId));
             const appSnapshot = await getDocs(appQuery);
-            appSnapshot.forEach(async (docSnap) => {
-                await deleteDoc(doc(db, "appointments", docSnap.id));
-            });
+            appSnapshot.forEach(async (docSnap) => { await deleteDoc(doc(db, "appointments", docSnap.id)); });
 
-            alert("تم حذف المريض وكافة سجلاته بنجاح من النظام.");
-            
-            // تحويل المستخدم تلقائياً للداشبورد الرئيسية بعد الحذف
+            alert("تم حذف المريض وكافة سجلاته.");
             window.location.href = "index.html";
-
         } catch (error) {
-            console.error("خطأ أثناء عملية الحذف: ", error);
-            alert("حدث خطأ، فشل حذف المريض بالكامل.");
+            alert("حدث خطأ أثناء الحذف.");
         }
     });
 }
 
 // تشغيل جلب البيانات فوراً
 loadPatientData();
+// ==========================================
+// دالة توليد الـ QR Code الخاص بالمريض تلقائياً
+// ==========================================
+function generatePatientQRCode() {
+    const qrContainer = document.getElementById("patient-qrcode");
+    
+    if (qrContainer && patientCustomId) {
+        qrContainer.innerHTML = ""; // تصفير المكان أولاً عشان ميكررش الرسم
+        
+        // جلب رابط الصفحة الحالية بالظبط (سواء على جيت هاب أو اللاب) وتثبيته مع الـ ID
+        const currentUrl = window.location.href; 
+
+        // تشغيل المكتبة لصناعة الباركود
+        new QRCode(qrContainer, {
+            text: currentUrl, // الرابط اللي الكاميرا هتقرأه وتحول عليه
+            width: 150,
+            height: 150,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+    }
+}
+
+// تشغيل دالة الـ QR تلقائياً مع تحميل بيانات المريض
+// (ضف هذا السطر في آخر ملف patient.js تحت دالة loadPatientData())
+generatePatientQRCode();
