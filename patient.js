@@ -343,6 +343,10 @@ if (updatePointsBtn) {
 // 2. منطق تصفير النقاط تماماً (Reset)
 if (resetPointsBtn) {
     resetPointsBtn.addEventListener("click", async () => {
+        if (patientCustomId === "1") {
+            alert("عذراً، لا يمكن تصفير نقاط السجل الأساسي (رقم 1) لأسباب تتعلق بأمان النظام.");
+            return;
+        }
         const confirmReset = confirm("هل أنت متأكد من تصفير نقاط هذا العميل بالكامل؟");
         if (!confirmReset) return;
 
