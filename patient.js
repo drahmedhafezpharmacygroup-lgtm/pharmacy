@@ -215,32 +215,26 @@ if (deletePatientBtn) {
     });
 }
 
-// تشغيل جلب البيانات فوراً
-loadPatientData();
 // ==========================================
-// دالة توليد الـ QR Code الخاص بالمريض تلقائياً
+// دالة توليد الـ QR Code المشفر برقم المريض فقط (شبه سيستم الجيم)
 // ==========================================
 function generatePatientQRCode() {
     const qrContainer = document.getElementById("patient-qrcode");
     
     if (qrContainer && patientCustomId) {
-        qrContainer.innerHTML = ""; // تصفير المكان أولاً عشان ميكررش الرسم
+        qrContainer.innerHTML = ""; // تصفير المكان
         
-        // جلب رابط الصفحة الحالية بالظبط (سواء على جيت هاب أو اللاب) وتثبيته مع الـ ID
-        const currentUrl = window.location.href; 
-
-        // تشغيل المكتبة لصناعة الباركود
+        // هنا السر: الـ QR جواه رقم الـ ID فقط وليس رابط كامل!
         new QRCode(qrContainer, {
-            text: currentUrl, // الرابط اللي الكاميرا هتقرأه وتحول عليه
+            text: patientCustomId.trim(), // القيمة هي الـ ID الحقيقي للمريض فقط
             width: 150,
             height: 150,
-            colorDark : "#000000",
+            colorDark : "#1f2937", // لون داكن احترافي
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.H
         });
     }
 }
 
-// تشغيل دالة الـ QR تلقائياً مع تحميل بيانات المريض
-// (ضف هذا السطر في آخر ملف patient.js تحت دالة loadPatientData())
+// تشغيل الدالة
 generatePatientQRCode();
