@@ -225,7 +225,58 @@ async function performSearch() {
         alert("حدث خطأ في الاتصال بالـ Firebase.");
     }
 }
+// ==========================================
+// تشغيل كاميرا الـ QR Code من الداشبورد (نسخة مطورة)
+// ==========================================
+const scanQRBtn = document.getElementById("scanQRBtn");
+let html5QrcodeScanner = null;
 
+if (scanQRBtn) {
+    scanQRBtn.addEventListener("click", () => {
+        const readerElement = document.getElementById("qr-reader");
+        
+        // لو الكاميرا مفتوحة ومفتوحة تاني وضغطنا ع الزرار يقفلها (Toggle)
+        if (readerElement.style.display === "block") {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+            }
+            readerElement.style.display = "none";
+            return;
+        }
+
+        // إظهار مربع الكاميرا
+        readerElement.style.display = "block";
+        
+        // إعدادات الكاميرا (طلب الكاميرا الخلفية للموبايل وتحديد حجم المربع)
+        html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { 
+            fps: 15, 
+            qrbox: { width: 250, height: 250 },
+            rememberLastUsedCamera: true
+        });
+        
+        // تشغيل الاسكانر
+        html5QrcodeScanner.render((decodedText) => {
+            // أول ما يلقط الـ QR بنجاح:
+            console.log("تم قراءة الـ QR بنجاح:", decodedText);
+            
+            // 1. إيقاف الكاميرا فوراً وإخفاء المربع
+            html5QrcodeScanner.clear();
+            readerElement.style.display = "none";
+            
+            // 2. تحليل الرابط الملقوط
+            // لو الرابط اللي جوه الـ QR كامل (مثلا: patient.html?id=123) هيحول عليه علطول
+            if (decodedText.includes("patient.html") || decodedText.includes("?id=")) {
+                window.location.href = decodedText;
+            } else {
+                // لو الـ QR جواه الـ ID بس كـ نص (مثلاً: 222102301) هنحوله إحنا لصفحة المريض
+                window.location.href = `patient.html?id=${decodedText.trim()}`;
+            }
+            
+        }, (errorMessage) => {
+            // ده خطأ بيظهر لو الكاميرا شغالة ولسه ملقطتش حاجة (نصيبه عشان ميعملش زحمة في الـ Console)
+        });
+    });
+}
 if (searchBtn) searchBtn.addEventListener("click", performSearch);
 if (searchInput) {
     searchInput.addEventListener("keypress", (e) => {
