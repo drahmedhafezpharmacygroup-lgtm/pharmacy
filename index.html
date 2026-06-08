@@ -51,17 +51,39 @@
         .patients-list { display: flex; flex-direction: column; gap: 10px; }
         .empty-text { color: #888; font-style: italic; text-align: center; margin-top: 30px; }
 
-        /* ستايل النافذة المنبثقة (Modal) */
-        .modal {
-            display: none; /* مخفية في البداية */
-            position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6); backdrop-filter: blur(3px);
-        }
-        .modal-content {
-            background-color: #fff; margin: 8% auto; padding: 30px; border-radius: 12px;
-            width: 90%; max-width: 500px; position: relative; box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-            animation: fadeIn 0.3s ease-in-out;
-        }
+        /* --- استبدل كود الـ Modal القديم في index.html بهذا الكود المطور --- */
+
+/* النافذة الخلفية الشفافة */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 2000; 
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%;
+    background-color: rgba(0,0,0,0.6); 
+    backdrop-filter: blur(3px);
+    
+    /* السطرين دول هما السر: بيسمحوا بالـ Scroll لو الفورمة طويلة */
+    overflow-y: auto; 
+    padding: 20px 0;
+}
+
+/* الصندوق الأبيض (الفورمة) */
+.modal-content {
+    background-color: #fff; 
+    
+    /* غيرنا الـ margin عشان يسيب مسافة متناسقة فوق وتحت */
+    margin: 2% auto; 
+    padding: 25px; 
+    border-radius: 12px;
+    width: 90%; 
+    max-width: 500px; 
+    position: relative; 
+    box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+    animation: fadeIn 0.3s ease-in-out;
+}
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         .close-modal { position: absolute; left: 20px; top: 15px; font-size: 30px; cursor: pointer; color: #aaa; line-height: 1; }
         .close-modal:hover { color: #dc3545; }
@@ -138,7 +160,8 @@
             </form>
         </div>
     </div>
-
+<!-- حط السطر ده جوه الـ <head> في ملف index.html لو مش موجود -->
+<script src="https://unpkg.com/html5-qrcode"></script>
     <script type="module" src="dashboard.js"></script>
 </body>
 </html>
