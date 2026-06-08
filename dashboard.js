@@ -166,8 +166,7 @@ if (addPatientForm) {
             alert("تم حفظ المريض بنجاح!");
             addPatientForm.reset();
             addPatientModal.style.display = "none";
-            window.open(`card.html?id=${patientId}&name=${encodeURIComponent(name)}`, '_blank');
-            loadDashboardLists(); // إعادة تحميل القوائم بالداشبورد
+window.location.href = `patient.html?id=${patientId}`;            loadDashboardLists(); // إعادة تحميل القوائم بالداشبورد
         } catch (error) {
             alert("حدث خطأ أثناء الحفظ.");
         }
