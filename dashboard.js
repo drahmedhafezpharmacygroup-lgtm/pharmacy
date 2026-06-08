@@ -259,29 +259,27 @@ if (scanQRBtn) {
                 qrbox: { width: 220, height: 220 } 
             };
 
-            // الـ environment بتجبر الموبايل يفتح الكاميرا اللي ورا علطول
-            await html5QrCode.start(
-                { facingMode: "environment" }, 
-                config, 
-                (decodedText) => {
-                    // أول ما يلقط الـ QR بنجاح
-                    html5QrCode.stop().then(() => {
-                        readerElement.style.display = "none";
-                        readerElement.innerHTML = "";
-                        
-                        // التحويل لصفحة المريض
-                        if (decodedText.includes("patient.html") || decodedText.includes("?id=")) {
-                            window.location.href = decodedText;
-                        } else {
-                            window.location.href = `patient.html?id=${decodedText.trim()}`;
-                        }
-                    }).catch(err => console.error(err));
-                },
-                (errorMessage) => {
-                    // تتبع صامت أثناء عدم اللقط
-                }
-            );
-
+            // تشغيل الاسكانر أول ما يلقط الكود من الكاميرا جوه المنصة بتاعتك
+await html5QrCode.start(
+    { facingMode: "environment" }, 
+    config, 
+    (decodedText) => {
+        html5QrCode.stop().then(() => {
+            readerElement.style.display = "none";
+            readerElement.innerHTML = "";
+            
+            // تنظيف النص الملقوط من أي مسافات
+            const scannedId = decodedText.trim();
+            
+            console.log("الرقم الملقوط من الباركود:", scannedId);
+            
+            // التحويل الفوري لصفحة المريض بناءً على الرقم اللي اتلقط (نفس فكرة الجيم)
+            window.location.href = `patient.html?id=${scannedId}`;
+            
+        }).catch(err => console.error(err));
+    },
+    (errorMessage) => { /* تتبع صامت */ }
+);
         } catch (error) {
             console.error("خطأ في تشغيل الكاميرا:", error);
             readerElement.innerHTML = `
