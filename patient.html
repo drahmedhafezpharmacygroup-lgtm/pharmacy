@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ملف المريض الإلكتروني</title>
+    <link rel="stylesheet" href="patient-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<div class="full-width" style="text-align: center; margin-top: 15px; background: #fff; padding: 15px; border-radius: 8px; border: 1px dashed #ccc;">
+    <strong style="display: block; margin-bottom: 10px;">الباركود الذكي للمريض (QR Code):</strong>
+    <div id="patient-qrcode" style="display: flex; justify-content: center; margin-bottom: 10px;"></div>
+    <button onclick="window.print()" style="background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">
+        <i class="fa-solid fa-print"></i> طباعة كارت الباركود
+    </button>
+</div>
+</head>
+<body>
+
+    <div class="patient-container">
+       <header class="patient-header">
+    <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-right"></i> العودة للوحة التحكم</a>
+    <h2><i class="fa-solid fa-id-card"></i> الملف الشخصي للمريض</h2>
+    
+    <button id="deletePatientBtn" class="delete-btn"><i class="fa-solid fa-trash-can"></i> حذف المريض نهائياً</button>
+</header>
+        <section class="patient-info-card">
+    <div class="info-grid">
+        <div><strong>الاسم الكامل:</strong> <span id="view-name">جاري التحميل...</span></div>
+        <div><strong>رقم المريض (ID):</strong> <span id="view-id">-</span></div>
+        <div><strong>رقم Tليفون:</strong> <span id="view-phone">-</span></div>
+        <div><strong>تاريخ الميلاد (السن):</strong> <span id="view-dob">-</span></div>
+        
+<div class="full-width" style="margin-top: 15px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e3e6f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+    <h3 style="margin-top: 0; color: #4e73df; font-size: 16px;"><i class="fa-solid fa-star"></i> نظام نقاط الولاء</h3>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
+        <div>
+            <span>النقاط الحالية: </span>
+            <strong id="patientPoints" style="font-size: 20px; color: #28a745;">0</strong> نقطة
+        </div>
+        <div class="points-actions">
+            <button id="updatePointsBtn" style="background: #f6c23e; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; margin-left: 5px;">
+                <i class="fa-solid fa-pen-to-square"></i> تعديل
+            </button>
+            <button id="resetPointsBtn" style="background: #e74a3b; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">
+                <i class="fa-solid fa-arrow-rotate-left"></i> تصفير النقاط
+            </button>
+        </div>
+    </div>
+</div>        
+        <div class="full-width"><strong>التشخيص الحالي (مريض إيه؟):</strong> <span id="view-diagnosis" class="badge">-</span></div>
+    </div>
+</section>
+
+        <div class="patient-content-layout">
+            
+            <section class="action-section">
+                <h3><i class="fa-solid fa-plus-minus"></i> تسجيل إجراء / زيارة جديدة</h3>
+                <form id="visitForm">
+                    <div class="form-group">
+                        <label>تاريخ الزيارة القادمة (الموعد القادم):</label>
+                        <input type="date" id="nextVisitDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>العلاج الموصوف / الذي تم صرفه في هذه الزيارة:</label>
+                        <textarea id="visitMedication" rows="3" placeholder="اكتب الأدوية والجرعات هنا..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>النقاط المستحقة عن هذه الزيارة:</label>
+                        <input type="number" id="visitPoints" min="0" placeholder="مثال: 10 نقاط" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ملاحظات صيدلانية أو إكلينيكية:</label>
+                        <textarea id="visitNotes" rows="2" placeholder="أي ملحوظة حابب ترجع لها لاحقاً..."></textarea>
+                    </div>
+                    <button type="submit" class="save-visit-btn"><i class="fa-solid fa-floppy-disk"></i> حفظ الزيارة وتحديث النقاط</button>
+                </form>
+            </section>
+
+            <section class="history-section">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> سجل المتابعة والزيارات السابقة</h3>
+                <div class="visits-timeline" id="visitsTimeline">
+                    <p class="empty-text">لا يوجد زيارات مسجلة مسبقاً لهذا المريض.</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script type="module" src="patient.js"></script>
+</body>
+</html>
