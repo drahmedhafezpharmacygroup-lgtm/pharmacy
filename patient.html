@@ -6,6 +6,16 @@
     <title>ملف المريض الإلكتروني</title>
     <link rel="stylesheet" href="patient-style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<div class="full-width" style="text-align: center; margin-top: 15px; background: #fff; padding: 15px; border-radius: 8px; border: 1px dashed #ccc;">
+    <strong style="display: block; margin-bottom: 10px;">الباركود الذكي للمريض (QR Code):</strong>
+    <div id="patient-qrcode" style="display: flex; justify-content: center; margin-bottom: 10px;"></div>
+    <button onclick="window.print()" style="background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">
+        <i class="fa-solid fa-print"></i> طباعة كارت الباركود
+    </button>
+</div>
 </head>
 <body>
 
